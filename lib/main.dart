@@ -92,31 +92,152 @@ class SongListPage extends StatefulWidget {
 
 class _SongListPageState extends State<SongListPage> {
   final _searchController = TextEditingController();
+  final _programController = TextEditingController();
   String _selectedCategory = 'Alle';
 
   List<String> get _categories {
     final categories =
-        widget.songs
-            .map((song) => song.category)
-            .where((category) => category.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort();
+    widget.songs
+        .map((song) => song.category)
+        .where((category) => category.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
     return ['Alle', ...categories];
   }
 
   List<Song> get _filteredSongs => widget.songs
       .where((song) {
-        final categoryMatches =
-            _selectedCategory == 'Alle' || song.category == _selectedCategory;
-        return categoryMatches && song.matches(_searchController.text);
-      })
+    final categoryMatches =
+        _selectedCategory == 'Alle' || song.category == _selectedCategory;
+    return categoryMatches && song.matches(_searchController.text);
+  })
       .toList(growable: false);
 
   @override
   void dispose() {
     _searchController.dispose();
+    _programController.dispose();
     super.dispose();
+  }
+
+  Song? _findSongByNumber(String number) {
+    final normalized = number.trim().toLowerCase();
+    for (final song in widget.songs) {
+      if (song.number.trim().toLowerCase() == normalized) {
+        return song;
+      }
+    }
+    return null;
+  }
+
+  List<String> _parseProgramNumbers(String input) {
+    return input
+        .split(RegExp(r'[,;\s]+'))
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<void> _openProgramDialog() async {
+    _programController.clear();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.library_music_rounded),
+            SizedBox(width: 10),
+            Text('Programm erstellen'),
+          ],
+        ),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Gib die Liednummern in der gewünschten Reihenfolge ein.',
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Beispiel: 12, 45, 188, 189',
+                style: TextStyle(color: Color(0xFF607585)),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _programController,
+                autofocus: true,
+                minLines: 2,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Liednummern',
+                  hintText: 'z. B. 12, 45, 188, 189',
+                  prefixIcon: Icon(Icons.format_list_numbered_rounded),
+                ),
+                onSubmitted: (_) =>
+                    Navigator.of(dialogContext).pop(_programController.text),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton.icon(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(_programController.text),
+            icon: const Icon(Icons.playlist_add_check_rounded),
+            label: const Text('Programm anzeigen'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || result == null || result.trim().isEmpty) return;
+
+    final numbers = _parseProgramNumbers(result);
+    final programSongs = <Song>[];
+    final missingNumbers = <String>[];
+
+    for (final number in numbers) {
+      final song = _findSongByNumber(number);
+      if (song != null) {
+        programSongs.add(song);
+      } else {
+        missingNumbers.add(number);
+      }
+    }
+
+    if (programSongs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Zu den eingegebenen Nummern wurden keine Lieder gefunden.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (missingNumbers.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nicht gefunden: ${missingNumbers.join(', ')}'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProgramPage(songs: programSongs),
+      ),
+    );
   }
 
   @override
@@ -233,20 +354,36 @@ class _SongListPageState extends State<SongListPage> {
                             items: _categories
                                 .map(
                                   (category) => DropdownMenuItem(
-                                    value: category,
-                                    child: Text(
-                                      category == 'Alle'
-                                          ? 'Alle Kategorien'
-                                          : category,
-                                    ),
-                                  ),
-                                )
+                                value: category,
+                                child: Text(
+                                  category == 'Alle'
+                                      ? 'Alle Kategorien'
+                                      : category,
+                                ),
+                              ),
+                            )
                                 .toList(growable: false),
                             onChanged: (category) {
                               if (category != null) {
                                 setState(() => _selectedCategory = category);
                               }
                             },
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: _openProgramDialog,
+                            icon: const Icon(Icons.queue_music_rounded),
+                            label: const Text('Programm'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 16,
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
@@ -265,7 +402,7 @@ class _SongListPageState extends State<SongListPage> {
                             )
                           else
                             ...songs.map(
-                              (song) => Padding(
+                                  (song) => Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
                                 child: Material(
                                   color: const Color(0xFFF7FBFF),
@@ -285,11 +422,11 @@ class _SongListPageState extends State<SongListPage> {
                                     subtitle: song.category.isEmpty
                                         ? null
                                         : Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 4,
-                                            ),
-                                            child: Text(song.category),
-                                          ),
+                                      padding: const EdgeInsets.only(
+                                        top: 4,
+                                      ),
+                                      child: Text(song.category),
+                                    ),
                                     trailing: const Icon(
                                       Icons.chevron_right_rounded,
                                     ),
@@ -312,6 +449,154 @@ class _SongListPageState extends State<SongListPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ProgramPage extends StatelessWidget {
+  const ProgramPage({super.key, required this.songs});
+
+  final List<Song> songs;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Programm'),
+        backgroundColor: const Color(0xFF0F76C5),
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(14, 18, 14, 36),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 940),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  elevation: 2,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.queue_music_rounded,
+                              color: Color(0xFF0F76C5),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Liederprogramm',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0B4F88),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${songs.length} Lieder • Reihenfolge: '
+                              '${songs.map((song) => song.number).join(' – ')}',
+                          style: const TextStyle(
+                            color: Color(0xFF566E7D),
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ...songs.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final song = entry.value;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Card(
+                      elevation: 2,
+                      margin: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: const Color(0xFFE8F3FC),
+                                  foregroundColor: const Color(0xFF0B4F88),
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        song.displayTitle,
+                                        style: const TextStyle(
+                                          fontSize: 23,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF0B4F88),
+                                        ),
+                                      ),
+                                      if (song.category.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          song.category,
+                                          style: const TextStyle(
+                                            color: Color(0xFF607585),
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 28),
+                            SelectableText(
+                              song.text.isEmpty
+                                  ? 'Kein Text gefunden.'
+                                  : song.text,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                height: 1.65,
+                                color: Color(0xFF112233),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -358,9 +643,9 @@ class SongDetailPage extends StatelessWidget {
                       song.displayTitle,
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(
-                            color: const Color(0xFF0B4F88),
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: const Color(0xFF0B4F88),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     SelectableText(
