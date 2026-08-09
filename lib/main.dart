@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +96,57 @@ class _SongListPageState extends State<SongListPage> {
   final _programController = TextEditingController();
   String _selectedCategory = 'Alle';
 
+  bool _programMenuOpen = false;
+  List<String> _program1Numbers = [];
+  List<String> _program2Numbers = [];
+
+  static const _program1Key = 'hallerschipper_programm_1';
+  static const _program2Key = 'hallerschipper_programm_2';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedPrograms();
+  }
+
+  Future<void> _loadSavedPrograms() async {
+    final prefs = await SharedPreferences.getInstance();
+    final p1 = prefs.getStringList(_program1Key) ?? <String>[];
+    final p2 = prefs.getStringList(_program2Key) ?? <String>[];
+
+    if (!mounted) return;
+    setState(() {
+      _program1Numbers = p1;
+      _program2Numbers = p2;
+    });
+  }
+
+  Future<void> _saveProgramNumbers(int slot, List<String> numbers) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (slot == 1) {
+      await prefs.setStringList(_program1Key, numbers);
+      if (!mounted) return;
+      setState(() => _program1Numbers = List<String>.from(numbers));
+    } else {
+      await prefs.setStringList(_program2Key, numbers);
+      if (!mounted) return;
+      setState(() => _program2Numbers = List<String>.from(numbers));
+    }
+  }
+
+  Future<void> _clearSavedProgram(int slot) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (slot == 1) {
+      await prefs.remove(_program1Key);
+      if (!mounted) return;
+      setState(() => _program1Numbers = []);
+    } else {
+      await prefs.remove(_program2Key);
+      if (!mounted) return;
+      setState(() => _program2Numbers = []);
+    }
+  }
+
   List<String> get _categories {
     final categories =
     widget.songs
@@ -139,17 +191,80 @@ class _SongListPageState extends State<SongListPage> {
         .toList(growable: false);
   }
 
-  Future<void> _openProgramDialog() async {
-    _programController.clear();
+  List<Song> _songsForNumbers(
+      List<String> numbers, {
+        List<String>? missingNumbers,
+      }) {
+    final result = <Song>[];
+    for (final number in numbers) {
+      final song = _findSongByNumber(number);
+      if (song != null) {
+        result.add(song);
+      } else {
+        missingNumbers?.add(number);
+      }
+    }
+    return result;
+  }
+
+  Future<void> _showSavedProgram(int slot) async {
+    final numbers = slot == 1 ? _program1Numbers : _program2Numbers;
+
+    if (numbers.isEmpty) {
+      await _editSavedProgram(slot);
+      return;
+    }
+
+    final missingNumbers = <String>[];
+    final programSongs = _songsForNumbers(
+      numbers,
+      missingNumbers: missingNumbers,
+    );
+
+    if (programSongs.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Programm $slot enthält keine vorhandenen Liednummern.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (missingNumbers.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nicht gefunden: ${missingNumbers.join(', ')}'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProgramPage(
+          songs: programSongs,
+          programTitle: 'Programm $slot',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editSavedProgram(int slot) async {
+    final savedNumbers = slot == 1 ? _program1Numbers : _program2Numbers;
+    _programController.text = savedNumbers.join(', ');
 
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.library_music_rounded),
-            SizedBox(width: 10),
-            Text('Programm erstellen'),
+            const Icon(Icons.library_music_rounded),
+            const SizedBox(width: 10),
+            Text('Programm $slot speichern'),
           ],
         ),
         content: SizedBox(
@@ -172,18 +287,25 @@ class _SongListPageState extends State<SongListPage> {
                 autofocus: true,
                 minLines: 2,
                 maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'Liednummern',
+                decoration: InputDecoration(
+                  labelText: 'Liednummern für Programm $slot',
                   hintText: 'z. B. 12, 45, 188, 189',
-                  prefixIcon: Icon(Icons.format_list_numbered_rounded),
+                  prefixIcon: const Icon(
+                    Icons.format_list_numbered_rounded,
+                  ),
                 ),
-                onSubmitted: (_) =>
-                    Navigator.of(dialogContext).pop(_programController.text),
               ),
             ],
           ),
         ),
         actions: [
+          if (savedNumbers.isNotEmpty)
+            TextButton.icon(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop('__DELETE__'),
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('Löschen'),
+            ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Abbrechen'),
@@ -191,54 +313,46 @@ class _SongListPageState extends State<SongListPage> {
           FilledButton.icon(
             onPressed: () =>
                 Navigator.of(dialogContext).pop(_programController.text),
-            icon: const Icon(Icons.playlist_add_check_rounded),
-            label: const Text('Programm anzeigen'),
+            icon: const Icon(Icons.save_rounded),
+            label: const Text('Speichern'),
           ),
         ],
       ),
     );
 
-    if (!mounted || result == null || result.trim().isEmpty) return;
+    if (!mounted || result == null) return;
 
-    final numbers = _parseProgramNumbers(result);
-    final programSongs = <Song>[];
-    final missingNumbers = <String>[];
-
-    for (final number in numbers) {
-      final song = _findSongByNumber(number);
-      if (song != null) {
-        programSongs.add(song);
-      } else {
-        missingNumbers.add(number);
-      }
+    if (result == '__DELETE__') {
+      await _clearSavedProgram(slot);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Programm $slot wurde gelöscht.')),
+      );
+      return;
     }
 
-    if (programSongs.isEmpty) {
+    final numbers = _parseProgramNumbers(result);
+    if (numbers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Zu den eingegebenen Nummern wurden keine Lieder gefunden.',
-          ),
+          content: Text('Bitte mindestens eine Liednummer eingeben.'),
         ),
       );
       return;
     }
 
-    if (missingNumbers.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Nicht gefunden: ${missingNumbers.join(', ')}'),
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
+    await _saveProgramNumbers(slot, numbers);
 
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ProgramPage(songs: programSongs),
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Programm $slot wurde gespeichert: ${numbers.join(', ')}',
+        ),
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -371,8 +485,16 @@ class _SongListPageState extends State<SongListPage> {
                           ),
                           const SizedBox(height: 12),
                           FilledButton.icon(
-                            onPressed: _openProgramDialog,
-                            icon: const Icon(Icons.queue_music_rounded),
+                            onPressed: () {
+                              setState(
+                                    () => _programMenuOpen = !_programMenuOpen,
+                              );
+                            },
+                            icon: Icon(
+                              _programMenuOpen
+                                  ? Icons.expand_less_rounded
+                                  : Icons.queue_music_rounded,
+                            ),
                             label: const Text('Programm'),
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
@@ -384,6 +506,33 @@ class _SongListPageState extends State<SongListPage> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
+                          ),
+                          AnimatedCrossFade(
+                            firstChild: const SizedBox.shrink(),
+                            secondChild: Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Column(
+                                children: [
+                                  _ProgramSlotButton(
+                                    title: 'Programm 1',
+                                    numbers: _program1Numbers,
+                                    onOpen: () => _showSavedProgram(1),
+                                    onEdit: () => _editSavedProgram(1),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _ProgramSlotButton(
+                                    title: 'Programm 2',
+                                    numbers: _program2Numbers,
+                                    onOpen: () => _showSavedProgram(2),
+                                    onEdit: () => _editSavedProgram(2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            crossFadeState: _programMenuOpen
+                                ? CrossFadeState.showSecond
+                                : CrossFadeState.showFirst,
+                            duration: const Duration(milliseconds: 220),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
@@ -454,16 +603,96 @@ class _SongListPageState extends State<SongListPage> {
   }
 }
 
+class _ProgramSlotButton extends StatelessWidget {
+  const _ProgramSlotButton({
+    required this.title,
+    required this.numbers,
+    required this.onOpen,
+    required this.onEdit,
+  });
+
+  final String title;
+  final List<String> numbers;
+  final VoidCallback onOpen;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmpty = numbers.isEmpty;
+
+    return Material(
+      color: const Color(0xFFF5FAFE),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+          child: Row(
+            children: [
+              Icon(
+                isEmpty
+                    ? Icons.playlist_add_rounded
+                    : Icons.playlist_play_rounded,
+                color: const Color(0xFF0F76C5),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isEmpty
+                          ? 'Noch kein Programm gespeichert'
+                          : 'Lieder: ${numbers.join(', ')}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF607585),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: isEmpty ? 'Programm speichern' : 'Programm ändern',
+                onPressed: onEdit,
+                icon: Icon(
+                  isEmpty ? Icons.add_circle_outline : Icons.edit_rounded,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ProgramPage extends StatelessWidget {
-  const ProgramPage({super.key, required this.songs});
+  const ProgramPage({
+    super.key,
+    required this.songs,
+    this.programTitle = 'Programm',
+  });
 
   final List<Song> songs;
+  final String programTitle;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Programm'),
+        title: Text(programTitle),
         backgroundColor: const Color(0xFF0F76C5),
         foregroundColor: Colors.white,
       ),
@@ -486,16 +715,16 @@ class ProgramPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.queue_music_rounded,
                               color: Color(0xFF0F76C5),
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Text(
-                              'Liederprogramm',
-                              style: TextStyle(
+                              programTitle,
+                              style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF0B4F88),
