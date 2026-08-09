@@ -358,6 +358,24 @@ class _SongListPageState extends State<SongListPage> {
   Widget build(BuildContext context) {
     final songs = _filteredSongs;
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Kurzanleitung',
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const HelpPage(),
+            ),
+          );
+        },
+        shape: const CircleBorder(),
+        child: const Text(
+          'i',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -825,6 +843,234 @@ class ProgramPage extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class HelpPage extends StatelessWidget {
+  const HelpPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const blue = Color(0xFF0F76C5);
+    const darkBlue = Color(0xFF0B4F88);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kurzanleitung'),
+        backgroundColor: blue,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(14, 18, 14, 36),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 940),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  elevation: 2,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Color(0xFFE8F3FC),
+                              foregroundColor: darkBlue,
+                              child: Text(
+                                'i',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Hallerschipper-App',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  color: darkBlue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Kurzanleitung für Sängerinnen und Sänger',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF566E7D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const _HelpSection(
+                  icon: Icons.download_rounded,
+                  title: '1. App installieren',
+                  text:
+                  'QR-Code bzw. Downloadlink öffnen, die Datei app-release.apk '
+                      'herunterladen und auf dem Android-Smartphone oder Tablet '
+                      'installieren. Falls Android nachfragt, die Installation aus '
+                      'dieser Quelle erlauben.',
+                ),
+                const _HelpSection(
+                  icon: Icons.search_rounded,
+                  title: '2. Lied suchen',
+                  text:
+                  'In der Suchleiste nach Liednummer, Titel oder einem Begriff '
+                      'aus dem Liedtext suchen. Das gewünschte Lied antippen, um den '
+                      'vollständigen Liedtext anzuzeigen.',
+                ),
+                const _HelpSection(
+                  icon: Icons.filter_list_rounded,
+                  title: '3. Kategorien verwenden',
+                  text:
+                  'Mit dem Kategorie-Filter lässt sich die Liedauswahl eingrenzen. '
+                      'So findest du bestimmte Liedgruppen schneller.',
+                ),
+                const _HelpSection(
+                  icon: Icons.queue_music_rounded,
+                  title: '4. Programm verwenden',
+                  text:
+                  'Den Button Programm öffnen. Dort stehen Programm 1 und '
+                      'Programm 2 zur Verfügung. Für jedes Programm können '
+                      'Liednummern in der gewünschten Reihenfolge eingetragen werden.',
+                ),
+                const _HelpSection(
+                  icon: Icons.save_rounded,
+                  title: '5. Programme speichern',
+                  text:
+                  'Programm 1 und Programm 2 werden auf dem Gerät gespeichert. '
+                      'Die Liedfolgen bleiben deshalb auch nach dem Schließen der App '
+                      'erhalten und können später wieder geöffnet werden.',
+                ),
+                const _HelpSection(
+                  icon: Icons.system_update_alt_rounded,
+                  title: '6. Neue App-Version',
+                  text:
+                  'Wenn eine neue Version bereitsteht, die aktuelle APK über '
+                      'denselben Downloadweg installieren. Die vorhandene App wird '
+                      'dabei normalerweise aktualisiert.',
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  color: const Color(0xFFEAF5FB),
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.lightbulb_rounded, color: darkBlue),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Tipp für den Auftritt: Programme vorher zusammenstellen '
+                                'und kurz prüfen. Dann stehen die Liedtexte beim Auftritt '
+                                'direkt in der richtigen Reihenfolge bereit.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              height: 1.45,
+                              color: Color(0xFF17384A),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HelpSection extends StatelessWidget {
+  const _HelpSection({
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8F3FC),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: const Color(0xFF0F76C5),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0B4F88),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: Color(0xFF223844),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
