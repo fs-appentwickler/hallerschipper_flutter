@@ -1,4 +1,4 @@
-const SONGS = [
+[
   {
     "nr": "00",
     "title": "Auf Weihnachtshafenwache",
@@ -773,4 +773,4 @@ const SONGS = [
     "category": "Seemannslieder",
     "text": "Der Mo-rgen brach an über endlosen Wellen, die Mö-wen fliegen hinaus. Ich ließ dich zurück in der klei-nen Taverne, unsere Freudschaft hält das schon aus.\nDie Stür-me des Meeres, sie riefen nach Freiheit, ohne dich war sie sehr kalt und leer. Jeder Ha-fen erzählte von neu-en Geschichten, ich träumte von Sehnsucht, von Freiheit und mehr.\nDie Ster-ne erzählen von fer-nen Küsten, doch kei-ne glänzt so wie du. Ich li-eß mich treiben auf rau-e Wellen, mein Her-z fand nie-mals Ruh.\nNun steh ich am Kai, und schau in die Ferne, der - A-nker fällt ich komm zurück. Lucille, nie wieder solln Wellen uns trennen, denn du bist mein Herz, meine Hoffnung, mein Glück.\nMußt du jetzt gerade gehen Lucille, ließest mich treiben auf offener See. Doch in der Ferne, riefst du meinen Namen, vergaß nie, wo Lich hingeh'. Mußt du jetzt gerade gehen Lucille\nLucille, du brachtest den Sturm in mein Leben, wilde Wellen in dunkler Nacht. In dei-nen Armen, da spür ich den Hafen, der mei-ne Seele bewacht.\nDie Se-gel sind fort, der Sturm ist vorbei. Lucille ab jetzt sind wir frei. Ich denk zurück an die schö-nen Stunden, doch die sind nun leider für immer vorbei.\nMußt du jetzt gerade gehen Lucille, ließest mich treiben auf offener See. Doch in der Ferne, riefst du meinen Namen, vergaß nie, wo Lich hingeh'. Mußt du jetzt gerade gehen Lucille\nDoch in der Ferne, riefst du meinen Namen, vergaß nie, wo Lich hingeh'. Mußt du jetzt gerade gehen Lucille"
   }
-];
+]
