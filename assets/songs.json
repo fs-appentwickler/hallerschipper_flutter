@@ -1,4 +1,4 @@
- [
+const SONGS = [
   {
     "nr": "00",
     "title": "Auf Weihnachtshafenwache",
@@ -13,15 +13,15 @@
   },
   {
     "nr": "00",
-    "title": "Manchmal brauchst du einen Engel",
-    "category": "Weihnachten",
-    "text": "Manchmal brauchst du einen Engel,der dich schützt und dich führt.Gott schickt manchmal einen Engel,wenn er deine Sorgen spürt.\nHast du Kummer tief im Herzen,tut dir wahrer Zuspruch gut.Denn mit großen Seelenschmerzenfehlt dir jeder Lebensmut.\nWähnst du dich total am Endeund denkst, du hättst dich verirrt,bringt ein stiller Schub die Wende,dass dein Herz nicht mehr erfriert.\nHab Vertrauen in die Kräfte,die Gott selbst als Losten schickt.Ihre heilsamen Geschäftehaben dich sehr schnell erquickt."
-  },
-  {
-    "nr": "00",
     "title": "Durch die stille Nacht",
     "category": "Weihnachten",
     "text": "Du--rch di-e stille Nacht - Pa ra pa pam pam Da ging ein kleiner Junge, - Ra pa pam pam Hielt seine Spielzeugtrommel i-n der Hand,Wollt' zu dem Sta-lle, wo die Kri-ppe stand Ra pa pam pam, - Ra pa pam pam Und die Trommel klang - Pa ra pa pam pam Durch das Land. Lie--be-s Christuskind, - Pa ra pa pam pam Bin nur ein kleiner Junge - Ra pa pam pam Wo alle Kö-nige mit Ga-ben steh'n,Lässt man vie-lleicht mich ga-r nicht z-u dir geh'n Hab' ja kein Geld, hab' ja kein Geld Kann nur Trom-meln fürdich - Pa ra pa pam pam Wenn's dir gefällt. U--nd vo-m Himmel hoch - Pa ra pa pam pam Da kam ein Stern herab - Pa ra pa pam pam Er führte ihn die sti-llen Straßen entlang Und seine kleine Trommel kla-ng und sang Ra pa pam pam, - Ra pa pam pam Dass zum Heil der Welt - Pa ra pa pam pam Chri-st-us kam.- - Pa ra pa pam pam, Pa ra pam pa pam"
+  },
+  {
+    "nr": "00",
+    "title": "Manchmal brauchst du einen Engel",
+    "category": "Weihnachten",
+    "text": "Manchmal brauchst du einen Engel,der dich schützt und dich führt.Gott schickt manchmal einen Engel,wenn er deine Sorgen spürt.\nHast du Kummer tief im Herzen,tut dir wahrer Zuspruch gut.Denn mit großen Seelenschmerzenfehlt dir jeder Lebensmut.\nWähnst du dich total am Endeund denkst, du hättst dich verirrt,bringt ein stiller Schub die Wende,dass dein Herz nicht mehr erfriert.\nHab Vertrauen in die Kräfte,die Gott selbst als Losten schickt.Ihre heilsamen Geschäftehaben dich sehr schnell erquickt."
   },
   {
     "nr": "2",
@@ -756,6 +756,12 @@
     "text": "Home from the Sea   190\n\nOn a cold winter's night, with a storm at its height, \nthe lifeboat answered the call. They pitched and they tossed, till we thought they were lost, as we watched from the harbor wall. Though the night was pitch black, there was no turning back, for someone was waiting out there. And each volunteer, had to live with his fear, as they joined in a silent prayer. \n\nCarry us home, home, home from the sea Angels of mercy, answer our plea And carry us home, home, home from the sea Carry us safely home from the sea \n\nAs they battled their way, past the mouth of the bay, it was blowing like never before. As they gallantly fought, every one of them though, of loved ones back on the shore. Then a flicker of light, and they knew they were right, there she was on the crest of a wave. She's an old fishing boat, and she's barely afloat, please God, there are souls we can save.\n\nAnd carry them home, home, home from the sea Angels of mercy, answer our plea And carry us home, home, home from the sea Carry us safely home from the sea \n\nAnd back in the town, on a street that runs down, to the sea and the harbor wall. They'd gathered in pairs, at the foot of the stairs, to wait for the radio call. And just before dawn, when all hope was gone, came a hush and a faraway sound. 'Twas a coxswain, he roared \" all survivors on board\" \nThank God, and we're homeward bound."
   },
   {
+    "nr": "191",
+    "title": "40 Jahre Hallerschipper",
+    "category": "Seemannslieder",
+    "text": "1.Vor vierzig Jahren fing es an, ein erstes - Lied erklang. Mit großer Freude Hand in Hand, und voller -Tatendrang.\nVon Hafen zu Hafen, von Ort zu Ort, unsere Lie-der trugen uns fort. \nWas uns verbindet, das bleibt besteh’n, solang wir zusammen geh`n.\n\nWir sind die - Hallerschipper, uns trägt der Wind hinaus. Mit unseren schönen Liedern, bekommen wir viel Applaus  (hey hey hey)  (hey hey hey) weit hin-aus. \n- - - (hey hey hey)  (hey hey hey) mit App-laus.\nVon Hafen zu Hafen … \n2.Wir kennen Sturm und ruhige See, den Wind \nund - Sonnenschein. Wenn wir dann unsere Stimmen heben, sind wir - nicht allein.\nVon Hafen zu Hafen , von Ort zu Ort, unsere Lie-der trugen uns fort. \nWas uns verbindet, das bleibt besteh’n, solang wir zusammen geh`n.\nVierzig - Jahre Freundschaft, vierzig Jahre - Meer und Klang. Wir singen - für die Menschen – ein ganzes Leben lang. (hey hey hey)  (hey hey hey) Hand in Hand.    - - - (hey hey hey) hey hey hey ) wohlbekannt.\nVon Hafen zu Hafen, von Ort zu Ort, unsere Lie-der trugen uns fort. \nWas uns verbindet, das bleibt besteh’n, solang wir zusammen geh`n.\n3.Drum lasst den Weg uns weiter geh`n,\nder Morgen - wartet schon. Was uns verbindet tragen wir, in guter - Tra-dition.\nVon Hafen zu Hafen, von Ort zu Ort, unsere Lie-der trugen uns fort. \nWas uns verbindet, das bleibt besteh’n, solang wir zusammen geh`n."
+  },
+  {
     "nr": "195",
     "title": "Geburtstagslied",
     "category": "Feierlich",
@@ -767,4 +773,4 @@
     "category": "Seemannslieder",
     "text": "Der Mo-rgen brach an über endlosen Wellen, die Mö-wen fliegen hinaus. Ich ließ dich zurück in der klei-nen Taverne, unsere Freudschaft hält das schon aus.\nDie Stür-me des Meeres, sie riefen nach Freiheit, ohne dich war sie sehr kalt und leer. Jeder Ha-fen erzählte von neu-en Geschichten, ich träumte von Sehnsucht, von Freiheit und mehr.\nDie Ster-ne erzählen von fer-nen Küsten, doch kei-ne glänzt so wie du. Ich li-eß mich treiben auf rau-e Wellen, mein Her-z fand nie-mals Ruh.\nNun steh ich am Kai, und schau in die Ferne, der - A-nker fällt ich komm zurück. Lucille, nie wieder solln Wellen uns trennen, denn du bist mein Herz, meine Hoffnung, mein Glück.\nMußt du jetzt gerade gehen Lucille, ließest mich treiben auf offener See. Doch in der Ferne, riefst du meinen Namen, vergaß nie, wo Lich hingeh'. Mußt du jetzt gerade gehen Lucille\nLucille, du brachtest den Sturm in mein Leben, wilde Wellen in dunkler Nacht. In dei-nen Armen, da spür ich den Hafen, der mei-ne Seele bewacht.\nDie Se-gel sind fort, der Sturm ist vorbei. Lucille ab jetzt sind wir frei. Ich denk zurück an die schö-nen Stunden, doch die sind nun leider für immer vorbei.\nMußt du jetzt gerade gehen Lucille, ließest mich treiben auf offener See. Doch in der Ferne, riefst du meinen Namen, vergaß nie, wo Lich hingeh'. Mußt du jetzt gerade gehen Lucille\nDoch in der Ferne, riefst du meinen Namen, vergaß nie, wo Lich hingeh'. Mußt du jetzt gerade gehen Lucille"
   }
-]
+];
