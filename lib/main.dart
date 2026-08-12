@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -103,10 +106,124 @@ class _SongListPageState extends State<SongListPage> {
   static const _program1Key = 'hallerschipper_programm_1';
   static const _program2Key = 'hallerschipper_programm_2';
 
+  bool _checkingForUpdate = false;
+  bool _updateAvailable = false;
+  String? _latestVersion;
+
+  static final Uri _latestReleaseApi = Uri.parse(
+    'https://api.github.com/repos/fs-appentwickler/hallerschipper_flutter/releases/latest',
+  );
+
+  static final Uri _latestApkUri = Uri.parse(
+    'https://github.com/fs-appentwickler/hallerschipper_flutter/releases/latest/download/app-release.apk',
+  );
+
+  Future<void> _checkForUpdate() async {
+    if (_checkingForUpdate) return;
+
+    if (mounted) {
+      setState(() => _checkingForUpdate = true);
+    }
+
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version.trim();
+
+      final response = await http.get(
+        _latestReleaseApi,
+        headers: const {
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        if (!mounted) return;
+        setState(() {
+          _checkingForUpdate = false;
+          _updateAvailable = false;
+        });
+        return;
+      }
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final tagName = (decoded['tag_name'] as String? ?? '').trim();
+      final latestVersion = tagName.toLowerCase().startsWith('v')
+          ? tagName.substring(1)
+          : tagName;
+
+      final updateAvailable = _isVersionNewer(
+        latestVersion,
+        currentVersion,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _checkingForUpdate = false;
+        _latestVersion = latestVersion;
+        _updateAvailable = updateAvailable;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _checkingForUpdate = false;
+        _updateAvailable = false;
+      });
+    }
+  }
+
+  bool _isVersionNewer(String latest, String current) {
+    List<int> parse(String value) {
+      return value
+          .split('.')
+          .map(
+            (part) =>
+        int.tryParse(part.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+      )
+          .toList();
+    }
+
+    final latestParts = parse(latest);
+    final currentParts = parse(current);
+    final length = latestParts.length > currentParts.length
+        ? latestParts.length
+        : currentParts.length;
+
+    for (var i = 0; i < length; i++) {
+      final latestPart = i < latestParts.length ? latestParts[i] : 0;
+      final currentPart = i < currentParts.length ? currentParts[i] : 0;
+
+      if (latestPart > currentPart) return true;
+      if (latestPart < currentPart) return false;
+    }
+
+    return false;
+  }
+
+  Future<void> _openLatestVersion() async {
+    final opened = await launchUrl(
+      _latestApkUri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Der Download der neuen Version konnte nicht geöffnet werden.',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _loadSavedPrograms();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdate();
+    });
   }
 
   Future<void> _loadSavedPrograms() async {
@@ -552,6 +669,28 @@ class _SongListPageState extends State<SongListPage> {
                                 : CrossFadeState.showFirst,
                             duration: const Duration(milliseconds: 220),
                           ),
+                          if (_updateAvailable) ...[
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                              onPressed: _openLatestVersion,
+                              icon: const Icon(Icons.system_update_alt_rounded),
+                              label: Text(
+                                _latestVersion == null
+                                    ? 'Neue Version verfügbar – jetzt aktualisieren'
+                                    : 'Neue Version $_latestVersion verfügbar – jetzt aktualisieren',
+                              ),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 16,
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                           Padding(
                             padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
                             child: Text(
