@@ -1,30 +1,25 @@
-name: hallerschipper_flutter
-description: Hallerschipper App mit digitaler Liedersammlung und gespeicherten Programmen
-publish_to: "none"
+name: hallerschipper
+description: Digitale Liedersammlung der Hallerschipper mit Offline-Nutzung und GitHub-Liedupdates.
+publish_to: 'none'
 
-version: 1.1.0+2
+# Bei einem bestehenden Projekt die bisherige Version übernehmen und die
+# Buildnummer (nach dem +) für eine neue Android-Version erhöhen.
+version: 1.0.0+1
 
 environment:
-  sdk: ">=3.4.0 <4.0.0"
+  sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-
-  cupertino_icons: ^1.0.8
-
-  # Speichert Programm 1 und Programm 2 dauerhaft auf dem Gerät
-  shared_preferences: ^2.5.3
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
-
 flutter:
   uses-material-design: true
-
   assets:
     - assets/songs.json
     - assets/logo.png
