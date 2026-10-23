@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hallerschipper/main.dart';
+import 'package:hallerschipper_flutter/main.dart';
 
 void main() {
   test('song search matches number, title and text', () {

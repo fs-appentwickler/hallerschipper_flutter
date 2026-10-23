@@ -5,6 +5,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -163,6 +166,110 @@ class _SongListPageState extends State<SongListPage> {
     }
   }
 
+  bool _checkingForUpdate = false;
+  bool _updateAvailable = false;
+  String? _latestVersion;
+
+  static final Uri _latestReleaseApi = Uri.parse(
+    'https://api.github.com/repos/fs-appentwickler/hallerschipper_flutter/releases/latest',
+  );
+
+  static final Uri _latestApkUri = Uri.parse(
+    'https://github.com/fs-appentwickler/hallerschipper_flutter/releases/latest/download/app-release.apk',
+  );
+
+  Future<void> _checkForUpdate() async {
+    if (!Platform.isAndroid || _checkingForUpdate || !mounted) return;
+
+    if (mounted) {
+      setState(() => _checkingForUpdate = true);
+    }
+
+    final client = http.Client();
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version.trim();
+
+      final response = await client
+          .get(
+        _latestReleaseApi,
+        headers: const {
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode != 200) {
+        if (!mounted) return;
+        setState(() {
+          _checkingForUpdate = false;
+          _updateAvailable = false;
+        });
+        return;
+      }
+
+      if (response.bodyBytes.length > 1024 * 1024) return;
+      final decoded =
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      if (decoded['draft'] == true || decoded['prerelease'] == true) return;
+      final assets = decoded['assets'];
+      if (assets is! List ||
+          !assets.any(
+                (asset) => asset is Map && asset['name'] == 'app-release.apk',
+          ))
+        return;
+      final tagName = (decoded['tag_name'] as String? ?? '').trim();
+      final latestVersion = tagName.toLowerCase().startsWith('v')
+          ? tagName.substring(1)
+          : tagName;
+
+      final updateAvailable = _isVersionNewer(latestVersion, currentVersion);
+
+      if (!mounted) return;
+      setState(() {
+        _checkingForUpdate = false;
+        _latestVersion = latestVersion;
+        _updateAvailable = updateAvailable;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _checkingForUpdate = false;
+        _updateAvailable = false;
+      });
+    } finally {
+      client.close();
+      if (mounted) setState(() => _checkingForUpdate = false);
+    }
+  }
+
+  bool _isVersionNewer(String latest, String current) =>
+      AppReleaseVersion.isNewer(latest, current);
+
+  Future<void> _openLatestVersion() async {
+    if (!Platform.isAndroid) return;
+    bool opened;
+    try {
+      opened = await launchUrl(
+        _latestApkUri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      opened = false;
+    }
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Der Download der neuen Version konnte nicht geöffnet werden.',
+          ),
+        ),
+      );
+    }
+  }
+
   bool _programMenuOpen = false;
   List<String> _program1Numbers = [];
   List<String> _program2Numbers = [];
@@ -175,7 +282,10 @@ class _SongListPageState extends State<SongListPage> {
     super.initState();
     _songs = widget.songs;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _checkUpdates();
+      if (mounted) {
+        _checkUpdates();
+        _checkForUpdate();
+      }
     });
     _loadSavedPrograms();
     LyricsStore.instance.addListener(_lyricsChanged);
@@ -561,6 +671,28 @@ class _SongListPageState extends State<SongListPage> {
                               child: Text(_updateStatus),
                             ),
                           const SizedBox(height: 12),
+                          if (Platform.isAndroid && _updateAvailable) ...[
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                              onPressed: _openLatestVersion,
+                              icon: const Icon(Icons.system_update_alt_rounded),
+                              label: Text(
+                                _latestVersion == null
+                                    ? 'Neue Android-App verfügbar – Download öffnen'
+                                    : 'Android-App $_latestVersion verfügbar – Download öffnen',
+                              ),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 16,
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                           TextField(
                             controller: _searchController,
                             onChanged: (_) => setState(() {}),
@@ -1721,5 +1853,24 @@ class SongUpdates {
     if (!await prefs.setString(cacheKey, raw)) {
       throw StateError('Cache konnte nicht gespeichert werden');
     }
+  }
+}
+
+// Only stable major.minor.patch releases are compared; build metadata is ignored.
+class AppReleaseVersion {
+  static bool isNewer(String latest, String current) {
+    final pattern = RegExp(
+      r'^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:\+[0-9A-Za-z.-]+)?$',
+    );
+    final a = pattern.firstMatch(latest);
+    final b = pattern.firstMatch(current);
+    if (a == null || b == null) return false;
+    for (var i = 1; i <= 3; i++) {
+      final left = int.tryParse(a.group(i)!);
+      final right = int.tryParse(b.group(i)!);
+      if (left == null || right == null) return false;
+      if (left != right) return left > right;
+    }
+    return false;
   }
 }
